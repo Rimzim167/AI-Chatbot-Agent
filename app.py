@@ -143,4 +143,3 @@ if user_input:
         st.code(full_text)
 
     st.session_state.history.append((user_input, full_text))
-
