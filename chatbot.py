@@ -1,16 +1,21 @@
-from openai import OpenAI
 import os
 from dotenv import load_dotenv
 
 load_dotenv()
 
+api_key = os.getenv("OPENROUTER_API_KEY")
+
 client = OpenAI(
-    api_key=os.getenv("OPENROUTER_API_KEY"),
-    base_url="https://openrouter.ai/api/v1"
+    base_url="https://openrouter.ai/api/v1",
+    api_key=api_key
 )
 
-def get_response(query, history=[]):
+# ------------------ NORMAL CHAT ------------------
+def get_response(query, history=None):
     try:
+        if history is None:
+            history = []
+
         messages = []
 
         for h in history:
@@ -28,18 +33,24 @@ def get_response(query, history=[]):
 
     except Exception as e:
         return f"ERROR: {str(e)}"
-    
+
+
+# ------------------ RAG CHAT ------------------
 def rag_response(query, text):
-    context = text[:2000]
+    try:
+        context = text[:2000]
 
-    messages = [
-        {"role": "system", "content": "Answer based on given document."},
-        {"role": "user", "content": f"Context: {context}\n\nQuestion: {query}"}
-    ]
+        messages = [
+            {"role": "system", "content": "Answer based only on the given document."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQuestion: {query}"}
+        ]
 
-    response = client.chat.completions.create(
-        model="meta-llama/llama-3-8b-instruct",
-        messages=messages
-    )
+        response = client.chat.completions.create(
+            model="meta-llama/llama-3-8b-instruct",
+            messages=messages
+        )
 
-    return response.choices[0].message.content
+        return response.choices[0].message.content
+
+    except Exception as e:
+        return f"ERROR: {str(e)}"
