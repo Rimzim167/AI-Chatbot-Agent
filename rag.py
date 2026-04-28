@@ -15,7 +15,6 @@ def create_vectorstore(documents):
     vectorstore = FAISS.from_documents(docs, embeddings)
     return vectorstore
 
-
 def get_rag_answer(query, text):
     # simple RAG logic
     if query.lower() in text.lower():

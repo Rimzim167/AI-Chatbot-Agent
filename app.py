@@ -8,12 +8,60 @@ from PIL import Image
 st.set_page_config(page_title="AI Chatbot Agent", layout="wide")
 
 # ======================
-# SIDEBAR
+# 🔐 LOGIN SYSTEM
 # ======================
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if "users" not in st.session_state:
+    st.session_state.users = {"admin": "1234"}  # default user
+
+def login_page():
+    st.title("🔐 Login / Signup")
+
+    choice = st.radio("Select Option", ["Login", "Signup"])
+
+    username = st.text_input("Username")
+    password = st.text_input("Password", type="password")
+
+    if choice == "Login":
+        if st.button("Login"):
+            if username in st.session_state.users and st.session_state.users[username] == password:
+                st.session_state.logged_in = True
+                st.session_state.username = username
+                st.success("Login successful ✅")
+                st.rerun()
+            else:
+                st.error("Invalid credentials ❌")
+
+    else:
+        if st.button("Signup"):
+            if username in st.session_state.users:
+                st.warning("User already exists")
+            else:
+                st.session_state.users[username] = password
+                st.success("Account created! Please login.")
+
+# If not logged in → show login page
+if not st.session_state.logged_in:
+    login_page()
+    st.stop()
+
+# ======================
+# 🧠 MAIN CHATBOT APP
+# ======================
+
+username = st.session_state.username
+
+# SIDEBAR
 with st.sidebar:
     st.header("⚙️ Settings")
 
-    username = st.text_input("Enter your name", "User")
+    st.write(f"👤 {username}")
+
+    if st.button("🚪 Logout"):
+        st.session_state.logged_in = False
+        st.rerun()
 
     if st.button("🗑️ Clear Chat"):
         st.session_state.history = []
@@ -80,8 +128,8 @@ if mic:
             user_input = recognizer.recognize_google(audio)
             st.success(f"You said: {user_input}")
 
-    except Exception as e:
-        st.error("Mic not working or permission issue")
+    except:
+        st.error("Mic not working")
 
 # ======================
 # 📎 FILE HANDLING
@@ -95,21 +143,18 @@ if uploaded_file:
     with open("temp_file", "wb") as f:
         f.write(uploaded_file.read())
 
-    # PDF
     if file_type == "application/pdf":
         st.session_state.pdf_text = load_pdf("temp_file")
 
         with st.chat_message("assistant"):
             st.success("📄 PDF ready! Ask questions.")
 
-    # IMAGE
     else:
         image = Image.open(uploaded_file)
 
         with st.chat_message("assistant"):
             st.image(image)
 
-        # Simple AI response for image
         with st.chat_message("assistant"):
             st.write("🧠 I can see an image. Ask something about it!")
 
@@ -131,7 +176,6 @@ if user_input:
             else:
                 response = get_response(user_input, st.session_state.history)
 
-        # Typing effect
         full_text = ""
         for word in response.split():
             full_text += word + " "
